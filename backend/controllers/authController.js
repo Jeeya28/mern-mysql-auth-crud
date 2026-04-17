@@ -21,6 +21,15 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Please provide name, email and password' });
     }
 
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
+    } 
+
     const [existingUser] = await db.query(
       'SELECT * FROM users WHERE email = ?',
       [email]
@@ -180,6 +189,10 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Token and new password are required' });
     }
 
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
     const [users] = await db.query(
       'SELECT * FROM users WHERE reset_token = ? AND reset_token_expiry > NOW()',
       [token]
@@ -199,6 +212,68 @@ exports.resetPassword = async (req, res) => {
 
     res.json({ message: 'Password reset successfully' });
 
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// UPDATE PROFILE (Protected)
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+
+    if (!name || !email) {
+      return res.status(400).json({ message: 'Name and email are required' });
+    }
+
+    // Check if email is taken by another user
+    const [existing] = await db.query(
+      'SELECT id FROM users WHERE email = ? AND id != ?',
+      [email, req.user.id]
+    );
+    if (existing.length > 0) {
+      return res.status(400).json({ message: 'Email already in use by another account' });
+    }
+
+    await db.query(
+      'UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?',
+      [name, email, phone || null, req.user.id]
+    );
+
+    res.json({ message: 'Profile updated successfully', user: { name, email, phone } });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// CHANGE PASSWORD (Protected)
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Both current and new password are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const [users] = await db.query('SELECT * FROM users WHERE id = ?', [req.user.id]);
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, users[0].password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await db.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.user.id]);
+
+    res.json({ message: 'Password changed successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

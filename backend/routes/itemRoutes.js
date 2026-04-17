@@ -13,8 +13,8 @@ const {
 const authMiddleware = require('../middleware/auth');
 
 // Protected routes
+router.get('/stats', authMiddleware, getStats);
 router.get('/', authMiddleware, getItems);
-router.get("/stats", authMiddleware, getStats);
 router.get('/:id', authMiddleware, getItemById);
 router.post('/', authMiddleware, createItem);
 router.put('/:id', authMiddleware, updateItem);
