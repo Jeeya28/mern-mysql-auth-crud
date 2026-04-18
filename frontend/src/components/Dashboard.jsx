@@ -34,6 +34,11 @@ export default function Dashboard() {
   const [deleteId, setDeleteId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("theme") === "dark";
+  });
+
   const fetchData = useCallback(async (page = 1, searchVal = search, statusVal = filterStatus) => {
     setLoading(true);
     try {
@@ -69,6 +74,16 @@ export default function Dashboard() {
   useEffect(() => {
     if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); }
   }, [error]);
+
+  useEffect(() => {
+  if (darkMode) {
+    document.documentElement.classList.add("dark");
+    localStorage.setItem("theme", "dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+    localStorage.setItem("theme", "light");
+  }
+  }, [darkMode]);
 
   // Search handler with debounce
   const handleSearch = (val) => {
@@ -173,6 +188,10 @@ export default function Dashboard() {
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   const statusColors = {
     active: 'bg-green-100 text-green-700',
     pending: 'bg-yellow-100 text-yellow-700',
@@ -182,21 +201,24 @@ export default function Dashboard() {
   if (loading && items.length === 0) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-gray-500 text-lg">Loading dashboard...</div>
+        <div className="text-gray-500 dark:text-gray-300 text-lg">Loading dashboard...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-white transition-colors duration-300">
       {/* Navbar */}
-      <nav className="bg-white shadow-sm border-b px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
+      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b px-6 py-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
         <div className="flex items-center gap-4">
           <Link to="/profile" className="text-sm text-blue-600 hover:underline">Profile</Link>
-          <span className="text-sm text-gray-600">
-            Hello, <span className="font-medium text-gray-800">{user?.name}</span>
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            Hello, <span className="font-medium text-gray-800 dark:text-white">{user?.name}</span>
           </span>
+          <button onClick={toggleDarkMode} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-yellow-300 hover:scale-110 hover:shadow-md transition duration-300" title="Toggle theme">
+            <i className={`bi ${darkMode ? 'bi-sun-fill' : 'bi-moon-stars-fill'} text-lg`}></i>
+          </button>
           <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-1.5 rounded-md text-sm hover:bg-red-600 transition">
             Logout
           </button>
@@ -224,8 +246,8 @@ export default function Dashboard() {
         </div>
 
         {/* Add Item Form */}
-        <div className="bg-white rounded-lg shadow-sm border p-5 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Add New Item</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border p-5 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Add New Item</h2>
           <form onSubmit={handleAdd} className="flex flex-col md:flex-row gap-3">
             <input
               type="text"
@@ -261,12 +283,12 @@ export default function Dashboard() {
         </div>
 
         {/* Items Table */}
-        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden">
           {/* Table header with search, filter, export */}
           <div className="px-5 py-4 border-b">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-gray-800">My Items</h2>
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">My Items</h2>
                 <span className="text-sm text-gray-500">({totalItems} total)</span>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
@@ -300,14 +322,14 @@ export default function Dashboard() {
           {loading ? (
             <div className="text-center py-8 text-gray-400">Loading...</div>
           ) : items.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
+            <div className="text-center py-12 text-gray-400 dark:text-gray-300">
               <p className="text-lg">No items found</p>
               <p className="text-sm">{search || filterStatus ? 'Try a different search or filter.' : 'Add your first item using the form above.'}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+                <thead className="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-200 uppercase text-xs">
                   <tr>
                     <th className="px-5 py-3 text-left">Title</th>
                     <th className="px-5 py-3 text-left hidden md:table-cell">Description</th>
@@ -358,9 +380,9 @@ export default function Dashboard() {
                         </td>
                       </tr>
                     ) : (
-                      <tr key={item.id} className="hover:bg-gray-50 transition">
-                        <td className="px-5 py-3 font-medium text-gray-800">{item.title}</td>
-                        <td className="px-5 py-3 text-gray-500 hidden md:table-cell">
+                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                        <td className="px-5 py-3 font-medium text-gray-800 dark:text-white">{item.title}</td>
+                        <td className="px-5 py-3 text-gray-500 dark:text-gray-300 hidden md:table-cell">
                           {item.description || <span className="italic text-gray-300">—</span>}
                         </td>
                         <td className="px-5 py-3">
@@ -427,9 +449,9 @@ export default function Dashboard() {
       {/* Delete Confirmation Modal */}
       {deleteId && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Delete Item</h3>
-            <p className="text-gray-500 text-sm mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
+            <p className="text-gray-500 dark:text-gray-300 text-sm mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setDeleteId(null)} disabled={deleteLoading} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition">Cancel</button>
               <button onClick={handleDelete} disabled={deleteLoading} className="px-4 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition disabled:opacity-50">
