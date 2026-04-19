@@ -1,110 +1,314 @@
-# MERN Stack Authentication & CRUD App (MySQL)
+# MERN Stack Task Management Dashboard with Authentication, Profile & Dark Mode (MySQL)
 
-A full-stack web application with user authentication, JWT-based authorization, and a complete dashboard with CRUD operations. Built with React.js, Node.js/Express.js, and MySQL.
+A full-stack **Task Management Web Application** built using the **MERN stack architecture with MySQL database integration**.  
+This project includes **JWT-based authentication, complete CRUD operations, dark mode UI, profile management with avatar upload, search/filter, pagination, and responsive dashboard design**.
+
+---
+
+## Live Demo
+
+🔗 **Live Demo:** _Add your deployed Vercel / Netlify / Render link here_  
+Example:
+
+```text
+https://your-project-demo-link.com
+```
+
+---
 
 ## Features
-- User registration and login with JWT authentication
-- Password reset via email (Nodemailer + Gmail)
-- Dashboard with item management (Create, Read, Update, Delete)
-- Search and filter items by title/description/status
-- Pagination for item lists
-- Export items to CSV
-- Profile management (update name, email, phone, change password)
-- Statistics cards (total, active, pending, completed counts)
-- Protected routes (redirect to login if unauthenticated)
-- Fully responsive design with Tailwind CSS
+
+### Authentication & Security
+- User Registration
+- Secure Login / Logout
+- JWT Authentication
+- Protected Routes
+- Password Change
+- Forgot Password & Reset Password
+- bcrypt password hashing
+- Token-based session management
+
+---
+
+### Dashboard Features
+- Add New Tasks / Items
+- View All Tasks
+- Edit Existing Tasks
+- Delete with Confirmation Modal
+- Status Update (Active / Pending / Completed)
+- Search functionality
+- Filter by status
+- Pagination
+- Statistics cards
+- Export CSV
+- Responsive UI
+
+---
+
+### Profile Management
+- Update Name
+- Update Email
+- Update Phone
+- Update Bio
+- Avatar Upload
+- Avatar Delete
+- Profile Settings Page
+- Dashboard avatar sync
+- Fallback initials when no avatar exists
+
+---
+
+### UI / UX Features
+- Light Mode
+- Dark Mode Toggle
+- Bootstrap Eye Password Toggle
+- Professional Tailwind UI
+- Responsive Mobile/Desktop Layout
+- Smooth transitions & hover effects
+
+---
 
 ## Tech Stack
-**Frontend:** React.js, React Router v7, Axios, Tailwind CSS, Vite  
-**Backend:** Node.js, Express.js v5, MySQL2, bcryptjs, jsonwebtoken, Nodemailer  
-**Database:** MySQL
 
-## Prerequisites
-- Node.js v20+
-- MySQL Server running locally (or XAMPP/WAMP)
-- Gmail account with App Password enabled (for email features)
+### Frontend
+- React.js
+- Vite
+- React Router DOM
+- Axios
+- Tailwind CSS
+- Bootstrap Icons
 
-## Database Setup
+---
 
-1. Start your MySQL server
-2. Open MySQL Workbench or run MySQL in terminal
-3. Execute the SQL schema:
+### Backend
+- Node.js
+- Express.js
+- JWT
+- bcryptjs
+- Nodemailer
+- Multer (Avatar Upload)
+
+---
+
+### Database
+- MySQL
+- MySQL Workbench
+- mysql2
+
+---
+
+---
+
+## Installation & Setup Instructions
+
+---
+
+## 1. Clone Repository
 
 ```bash
-mysql -u root -p < database.sql
+git clone https://github.com/your-username/your-repo-name.git
+cd your-repo-name
 ```
 
-Or manually run the contents of `database.sql` in MySQL Workbench.
+---
 
-4. Verify tables were created:
-```sql
-USE mern_auth_db;
-SHOW TABLES;
--- Should show: items, users
-```
-
-## Backend Setup
+## 2. Backend Setup
 
 ```bash
 cd backend
 npm install
-cp .env.example .env
 ```
 
-> **Gmail App Password:** Go to Google Account → Security → 2-Step Verification → App passwords. Generate one for "Mail".
+Create `.env` file:
 
-Start the backend:
+```env
+PORT=5000
+JWT_SECRET=your_secret_key
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=mern_auth_db
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_app_password
+```
+
+Start backend:
+
 ```bash
 npm run dev
-# Server runs on http://localhost:5000
 ```
 
-## Frontend Setup
+Backend runs on:
+
+```text
+http://localhost:5000
+```
+
+---
+
+## 3. Frontend Setup
 
 ```bash
 cd frontend
 npm install
 npm run dev
-# App runs on http://localhost:5173
 ```
+
+Frontend runs on:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## 4. Database Setup
+
+Open MySQL Workbench and run:
+
+```sql
+CREATE DATABASE mern_auth_db;
+USE mern_auth_db;
+```
+
+Run your `database.sql` file:
+
+```bash
+mysql -u root -p < database.sql
+```
+
+Verify tables:
+
+```sql
+SHOW TABLES;
+```
+
+Expected:
+
+```text
+users
+items
+```
+
+---
 
 ## API Endpoints
 
-### Auth Routes (`/api/auth`)
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/register` | Register new user | No |
-| POST | `/login` | Login and get JWT token | No |
-| POST | `/forgot-password` | Send password reset email | No |
-| POST | `/reset-password` | Reset password with token | No |
-| GET | `/me` | Get current user info | Yes |
-| PUT | `/profile` | Update profile (name, email, phone) | Yes |
-| PUT | `/change-password` | Change password | Yes |
+---
 
-### Item Routes (`/api/items`)
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/` | Get all items (supports ?search=&status=&page=&limit=) | Yes |
-| GET | `/stats` | Get item statistics | Yes |
-| GET | `/:id` | Get single item | Yes |
-| POST | `/` | Create new item | Yes |
-| PUT | `/:id` | Update item | Yes |
-| DELETE | `/:id` | Delete item | Yes |
+### Authentication Routes
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register user |
+| POST | `/api/auth/login` | Login user |
+| GET | `/api/auth/me` | Current user |
+| POST | `/api/auth/forgot-password` | Forgot password |
+| POST | `/api/auth/reset-password` | Reset password |
+
+---
+
+### Profile Routes
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/profile` | Get profile |
+| PUT | `/api/profile` | Update profile |
+| POST | `/api/profile/avatar` | Upload avatar |
+| DELETE | `/api/profile/avatar` | Delete avatar |
+
+---
+
+### Item Routes
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/items` | Get items |
+| POST | `/api/items` | Add item |
+| PUT | `/api/items/:id` | Update item |
+| DELETE | `/api/items/:id` | Delete item |
+| GET | `/api/items/stats` | Dashboard stats |
+
+---
 
 ## Screenshots
 
-See the `screenshots/` folder for:
-- Login page
-- Registration page
-- Dashboard with items
-- Search and filter
-- Add/Edit item
-- Delete confirmation
-- MySQL database tables
+---
 
-## Security Notes
-- All passwords are hashed with bcryptjs (salt rounds: 10)
-- JWT tokens expire after 7 days
-- All SQL queries use parameterized statements (prevents SQL injection)
-- CORS enabled for frontend origin
-- `.env` file is never committed to Git
+### Register Page
+![Register](./screenshots/register.png)
+
+---
+
+### Login Page
+![Login](./screenshots/login.png)
+
+---
+
+### Dashboard Light Mode
+![Dashboard](./screenshots/dashboard.png)
+
+---
+
+### Dashboard Dark Mode
+![Dashboard Dark](./screenshots/dashboard-dark.png)
+
+---
+
+### CRUD Operations
+![CRUD Operations](./screenshots/crud-operations.png)
+
+---
+
+### Edit Functionality
+![Edit Functionality](./screenshots/edit-functionality.png)
+
+---
+
+### Delete Confirmation
+![Delete Confirmation](./screenshots/delete-confirmation.png)
+
+---
+
+### Profile Settings
+![Profile](./screenshots/profile.png)
+
+---
+
+### Profile Dark Mode
+![Profile Dark](./screenshots/profile-dark.png)
+
+---
+
+### MySQL Database
+![MySQL Database](./screenshots/mysql-database.png)
+
+---
+
+## Security Features
+
+- JWT Authentication
+- Password hashing using bcrypt
+- SQL Injection protection
+- Protected routes
+- Secure API middleware
+- Form validation
+- Avatar upload validation
+
+---
+
+## Future Enhancements
+
+- Task priority labels
+- Due dates & reminders
+- Team collaboration
+- Notifications
+- Analytics dashboard
+
+---
+
+## Author
+
+**Jeeya S**
+
+---
