@@ -1,4 +1,4 @@
-# Full Stack Task Management Dashboard using MERN Stack and MySQL
+## Task Management Dashboard using MERN Stack and MySQL
 
 A full-stack **Task Management Web Application** built using the **MERN stack architecture with MySQL database integration**.  
 This project includes **JWT-based authentication, complete CRUD operations, dark mode UI, profile management with avatar upload, search/filter, pagination, and responsive dashboard design**.
