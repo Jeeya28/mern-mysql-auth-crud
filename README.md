@@ -9,7 +9,7 @@ This project includes **JWT-based authentication, complete CRUD operations, dark
 
 🔗 **Live Demo:** 
 
-[Link](https://your-project-demo-link.com)
+https://your-project-demo-link.com
 
 ---
 
