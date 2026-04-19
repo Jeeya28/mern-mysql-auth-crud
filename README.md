@@ -5,14 +5,6 @@ This project includes **JWT-based authentication, complete CRUD operations, dark
 
 ---
 
-## Live Demo
-
-🔗 **Live Demo:** 
-
-https://your-project-demo-link.com
-
----
-
 ## Features
 
 ### Authentication & Security
