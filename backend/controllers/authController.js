@@ -41,14 +41,59 @@ exports.registerUser = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     await db.query(
-      'INSERT INTO users (name, email, phone, password) VALUES (?, ?, ?, ?)',
-      [name, email, phone || null, hashedPassword]
+      'INSERT INTO users (name, email, phone, password, is_verified, verify_token, verify_token_expiry) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, email, phone || null, hashedPassword, false, verificationToken, verificationTokenExpiry]
     );
 
-    res.status(201).json({ message: 'User registered successfully' });
+    const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${verificationToken}`;
 
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Verify your email address',
+      html: `
+        <p>Thanks for registering!</p>
+        <p>Please verify your email by clicking the link below:</p>
+        <a href="${verifyUrl}">${verifyUrl}</a>
+        <p>This link expires in 24 hours.</p>
+      `,
+    });
+
+    res.status(201).json({ message: 'Registration successful. Check your email to verify your account.' });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// EMAIL VERIFICATION
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({ message: 'Verification token is required' });
+    }
+
+    const [users] = await db.query(
+      'SELECT * FROM users WHERE verify_token = ? AND verify_token_expiry > NOW()',
+      [token]
+    );
+
+    if (users.length === 0) {
+      return res.status(400).json({ message: 'Invalid or expired verification token' });
+    }
+
+    await db.query(
+      'UPDATE users SET is_verified = ?, verify_token = NULL, verify_token_expiry = NULL WHERE id = ?',
+      [true, users[0].id]
+    );
+
+    res.json({ message: 'Email verified successfully. You can now log in.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -73,6 +118,10 @@ exports.loginUser = async (req, res) => {
     }
 
     const user = users[0];
+
+    if (!user.is_verified) {
+      return res.status(403).json({ message: 'Please verify your email before logging in.' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
 

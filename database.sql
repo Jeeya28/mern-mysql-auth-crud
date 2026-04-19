@@ -9,11 +9,15 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(100) NOT NULL UNIQUE,
   phone VARCHAR(20),
   password VARCHAR(255) NOT NULL,
+  is_verified TINYINT(1) DEFAULT 0,
+  verify_token VARCHAR(255) DEFAULT NULL,
+  verify_token_expiry DATETIME DEFAULT NULL,
   reset_token VARCHAR(255) DEFAULT NULL,
   reset_token_expiry DATETIME DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_email (email),
+  INDEX idx_verify_token (verify_token),
   INDEX idx_reset_token (reset_token)
 );
 

@@ -50,8 +50,7 @@ export default function Register() {
         phone: form.phone,
         password: form.password,
       });
-      setSuccess('Account created! Redirecting to login...');
-      setTimeout(() => navigate('/login'), 1500);
+      setSuccess('Account created! Check your inbox to verify your email before logging in.');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
