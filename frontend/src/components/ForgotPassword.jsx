@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../api/authApi';
 
@@ -7,6 +7,10 @@ export default function ForgotPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -4,7 +4,7 @@ import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import Dashboard from './components/Dashboard';
-import Profile from './components/Profile'; 
+import ProfileSettings from './components/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 
@@ -33,10 +33,10 @@ function App() {
         <ProtectedRoute><Dashboard /></ProtectedRoute>
       } />
 
+      {/* Profile Settings — protected */}
       <Route path="/profile" element={
-        <ProtectedRoute><Profile /></ProtectedRoute>
+        <ProtectedRoute><ProfileSettings /></ProtectedRoute>
       } />
-      
     </Routes>
   );
 }

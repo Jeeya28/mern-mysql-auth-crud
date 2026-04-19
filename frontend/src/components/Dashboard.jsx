@@ -3,6 +3,42 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getItems, createItem, updateItem, deleteItem, getStats } from '../api/itemApi';
 
+// ── Inline Avatar helper ──────────────────────────────────────────────────────
+// Shows uploaded photo OR gradient-initials fallback (no external dep)
+function Avatar({ user }) {
+  const initials = (user?.name || '?')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  const url = user?.avatar
+    ? `http://localhost:5000/uploads/${user.avatar}`
+    : null;
+
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={user?.name}
+        className="w-10 h-10 rounded-full object-cover border-2 border-violet-200 shadow"
+        onError={(e) => {
+          // If image fails to load, hide it — the fallback div below shows
+          e.target.style.display = 'none';
+          e.target.nextSibling && (e.target.nextSibling.style.display = 'flex');
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm bg-gradient-to-br from-violet-500 to-indigo-600 text-white border-2 border-violet-200 shadow select-none">
+      {initials}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -36,56 +72,68 @@ export default function Dashboard() {
 
   // Dark mode state
   const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
+    return localStorage.getItem('theme') === 'dark';
   });
 
-  const fetchData = useCallback(async (page = 1, searchVal = search, statusVal = filterStatus) => {
-    setLoading(true);
-    try {
-      const params = { page, limit: ITEMS_PER_PAGE };
-      if (searchVal) params.search = searchVal;
-      if (statusVal) params.status = statusVal;
+  const fetchData = useCallback(
+    async (page = 1, searchVal = search, statusVal = filterStatus) => {
+      setLoading(true);
+      try {
+        const params = { page, limit: ITEMS_PER_PAGE };
+        if (searchVal) params.search = searchVal;
+        if (statusVal) params.status = statusVal;
 
-      const itemsRes = await getItems(params);
-      setItems(itemsRes.data.items);
-      setTotalPages(itemsRes.data.pagination.totalPages);
-      setTotalItems(itemsRes.data.pagination.total);
-      setCurrentPage(page);
-      setError('');
-    } catch (err) {
-      setError('Failed to load items');
-    } finally {
-      setLoading(false);
-    }
+        const itemsRes = await getItems(params);
+        setItems(itemsRes.data.items);
+        setTotalPages(itemsRes.data.pagination.totalPages);
+        setTotalItems(itemsRes.data.pagination.total);
+        setCurrentPage(page);
+        setError('');
+      } catch {
+        setError('Failed to load items');
+      } finally {
+        setLoading(false);
+      }
 
-    try {
-      const statsRes = await getStats();
-      setStats(statsRes.data);
-    } catch (err) {
-      console.error('Stats failed:', err);
-    }
-  }, [search, filterStatus]);
-
-  useEffect(() => { fetchData(1, search, filterStatus); }, []);
+      try {
+        const statsRes = await getStats();
+        setStats(statsRes.data);
+      } catch (err) {
+        console.error('Stats failed:', err);
+      }
+    },
+    [search, filterStatus]
+  );
 
   useEffect(() => {
-    if (success) { const t = setTimeout(() => setSuccess(''), 3000); return () => clearTimeout(t); }
+    fetchData(1, search, filterStatus);
+  }, []);
+
+  useEffect(() => {
+    if (success) {
+      const t = setTimeout(() => setSuccess(''), 3000);
+      return () => clearTimeout(t);
+    }
   }, [success]);
+
   useEffect(() => {
-    if (error) { const t = setTimeout(() => setError(''), 4000); return () => clearTimeout(t); }
+    if (error) {
+      const t = setTimeout(() => setError(''), 4000);
+      return () => clearTimeout(t);
+    }
   }, [error]);
 
   useEffect(() => {
-  if (darkMode) {
-    document.documentElement.classList.add("dark");
-    localStorage.setItem("theme", "dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-    localStorage.setItem("theme", "light");
-  }
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
   }, [darkMode]);
 
-  // Search handler with debounce
+  // Search handler
   const handleSearch = (val) => {
     setSearch(val);
     fetchData(1, val, filterStatus);
@@ -139,7 +187,7 @@ export default function Dashboard() {
   };
 
   const handleStatusChange = async (id, status) => {
-    const item = items.find(i => i.id === id);
+    const item = items.find((i) => i.id === id);
     if (!item) return;
     try {
       await updateItem(id, { title: item.title, description: item.description, status });
@@ -157,25 +205,25 @@ export default function Dashboard() {
       setDeleteId(null);
       setSuccess('Item deleted successfully!');
       await fetchData(currentPage, search, filterStatus);
-    } catch (err) {
+    } catch {
       setError('Failed to delete item');
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  // CSV Export (bonus feature)
+  // CSV Export
   const handleExportCSV = () => {
     if (items.length === 0) { setError('No items to export'); return; }
     const headers = ['ID', 'Title', 'Description', 'Status', 'Created At'];
-    const rows = items.map(item => [
+    const rows = items.map((item) => [
       item.id,
       `"${(item.title || '').replace(/"/g, '""')}"`,
       `"${(item.description || '').replace(/"/g, '""')}"`,
       item.status,
-      new Date(item.created_at).toLocaleDateString()
+      new Date(item.created_at).toLocaleDateString(),
     ]);
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -188,10 +236,6 @@ export default function Dashboard() {
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
   const statusColors = {
     active: 'bg-green-100 text-green-700',
     pending: 'bg-yellow-100 text-yellow-700',
@@ -200,7 +244,7 @@ export default function Dashboard() {
 
   if (loading && items.length === 0) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
         <div className="text-gray-500 dark:text-gray-300 text-lg">Loading dashboard...</div>
       </div>
     );
@@ -208,27 +252,62 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-white transition-colors duration-300">
-      {/* Navbar */}
+
+      {/* ── Navbar ── */}
       <nav className="bg-white dark:bg-gray-800 shadow-sm border-b px-6 py-4 flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-800 dark:text-white">Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <Link to="/profile" className="text-sm text-blue-600 hover:underline">Profile</Link>
-          <span className="text-sm text-gray-600 dark:text-gray-300">
+
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
             Hello, <span className="font-medium text-gray-800 dark:text-white">{user?.name}</span>
           </span>
-          <button onClick={toggleDarkMode} className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-yellow-300 hover:scale-110 hover:shadow-md transition duration-300" title="Toggle theme">
+
+          {/* ── Clickable avatar → /profile ── */}
+          <Link
+            to="/profile"
+            title="Edit Profile"
+            className="relative group"
+          >
+            <Avatar user={user} />
+            {/* pencil badge appears on hover */}
+            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-violet-600 rounded-full border-2 border-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              </svg>
+            </span>
+          </Link>
+
+          {/* Dark mode toggle */}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-yellow-300 hover:scale-110 hover:shadow-md transition duration-300"
+            title="Toggle theme"
+          >
             <i className={`bi ${darkMode ? 'bi-sun-fill' : 'bi-moon-stars-fill'} text-lg`}></i>
           </button>
-          <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-1.5 rounded-md text-sm hover:bg-red-600 transition">
+
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-4 py-1.5 rounded-md text-sm hover:bg-red-600 transition"
+          >
             Logout
           </button>
         </div>
       </nav>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
+
         {/* Alerts */}
-        {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-4 text-sm">{error}</div>}
-        {success && <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded mb-4 text-sm">{success}</div>}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded mb-4 text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded mb-4 text-sm">
+            {success}
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -238,7 +317,10 @@ export default function Dashboard() {
             { label: 'Pending', value: stats.pending, color: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
             { label: 'Completed', value: stats.completed, color: 'bg-blue-50 text-blue-700 border-blue-200' },
           ].map(({ label, value, color }) => (
-            <div key={label} className={`border rounded-lg p-4 ${color}`}>
+            <div
+              key={label}
+              className={`border rounded-lg p-4 ${color} transition transform hover:-translate-y-0.5 hover:shadow-lg hover:border-gray-300 cursor-pointer`}
+            >
               <p className="text-sm font-medium opacity-80">{label}</p>
               <p className="text-3xl font-bold mt-1">{value || 0}</p>
             </div>
@@ -254,19 +336,19 @@ export default function Dashboard() {
               placeholder="Title *"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
             <input
               type="text"
               placeholder="Description (optional)"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
             <select
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             >
               <option value="active">Active</option>
               <option value="pending">Pending</option>
@@ -284,12 +366,13 @@ export default function Dashboard() {
 
         {/* Items Table */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border overflow-hidden">
+
           {/* Table header with search, filter, export */}
-          <div className="px-5 py-4 border-b">
+          <div className="px-5 py-4 border-b dark:border-gray-700">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">My Items</h2>
-                <span className="text-sm text-gray-500">({totalItems} total)</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">({totalItems} total)</span>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                 <input
@@ -297,12 +380,12 @@ export default function Dashboard() {
                   placeholder="Search items..."
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48"
+                  className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 />
                 <select
                   value={filterStatus}
                   onChange={(e) => handleFilterStatus(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 >
                   <option value="">All Status</option>
                   <option value="active">Active</option>
@@ -320,11 +403,15 @@ export default function Dashboard() {
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-gray-400">Loading...</div>
+            <div className="text-center py-8 text-gray-400 dark:text-gray-300">Loading...</div>
           ) : items.length === 0 ? (
             <div className="text-center py-12 text-gray-400 dark:text-gray-300">
               <p className="text-lg">No items found</p>
-              <p className="text-sm">{search || filterStatus ? 'Try a different search or filter.' : 'Add your first item using the form above.'}</p>
+              <p className="text-sm">
+                {search || filterStatus
+                  ? 'Try a different search or filter.'
+                  : 'Add your first item using the form above.'}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -337,16 +424,16 @@ export default function Dashboard() {
                     <th className="px-5 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {items.map((item) =>
                     editingItem === item.id ? (
-                      <tr key={item.id} className="bg-blue-50">
+                      <tr key={item.id} className="bg-blue-50 dark:bg-blue-900/20">
                         <td className="px-5 py-3">
                           <input
                             type="text"
                             value={editForm.title}
                             onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                            className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:border-blue-500 dark:text-white"
                           />
                         </td>
                         <td className="px-5 py-3 hidden md:table-cell">
@@ -354,14 +441,14 @@ export default function Dashboard() {
                             type="text"
                             value={editForm.description}
                             onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                            className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-full px-2 py-1 border border-blue-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:border-blue-500 dark:text-white"
                           />
                         </td>
                         <td className="px-5 py-3">
                           <select
                             value={editForm.status}
                             onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                            className="px-2 py-1 border border-blue-300 rounded text-sm"
+                            className="px-2 py-1 border border-blue-300 rounded text-sm dark:bg-gray-700 dark:border-blue-500 dark:text-white"
                           >
                             <option value="active">Active</option>
                             <option value="pending">Pending</option>
@@ -370,10 +457,17 @@ export default function Dashboard() {
                         </td>
                         <td className="px-5 py-3 text-right">
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => handleEdit(item.id)} disabled={editLoading} className="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 transition disabled:opacity-50">
+                            <button
+                              onClick={() => handleEdit(item.id)}
+                              disabled={editLoading}
+                              className="bg-green-500 text-white px-3 py-1 rounded text-xs hover:bg-green-600 transition disabled:opacity-50"
+                            >
                               {editLoading ? 'Saving...' : 'Save'}
                             </button>
-                            <button onClick={() => setEditingItem(null)} className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-300 transition">
+                            <button
+                              onClick={() => setEditingItem(null)}
+                              className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-300 transition"
+                            >
                               Cancel
                             </button>
                           </div>
@@ -383,7 +477,7 @@ export default function Dashboard() {
                       <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                         <td className="px-5 py-3 font-medium text-gray-800 dark:text-white">{item.title}</td>
                         <td className="px-5 py-3 text-gray-500 dark:text-gray-300 hidden md:table-cell">
-                          {item.description || <span className="italic text-gray-300">—</span>}
+                          {item.description || <span className="italic text-gray-300 dark:text-gray-500">—</span>}
                         </td>
                         <td className="px-5 py-3">
                           <select
@@ -398,8 +492,18 @@ export default function Dashboard() {
                         </td>
                         <td className="px-5 py-3 text-right">
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => startEdit(item)} className="bg-yellow-400 text-white px-3 py-1 rounded text-xs hover:bg-yellow-500 transition">Edit</button>
-                            <button onClick={() => setDeleteId(item.id)} className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 transition">Delete</button>
+                            <button
+                              onClick={() => startEdit(item)}
+                              className="bg-yellow-400 text-white px-3 py-1 rounded text-xs hover:bg-yellow-500 transition"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => setDeleteId(item.id)}
+                              className="bg-red-500 text-white px-3 py-1 rounded text-xs hover:bg-red-600 transition"
+                            >
+                              Delete
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -412,23 +516,27 @@ export default function Dashboard() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-5 py-4 border-t flex items-center justify-between">
-              <span className="text-sm text-gray-500">
+            <div className="px-5 py-4 border-t dark:border-gray-700 flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 Page {currentPage} of {totalPages}
               </span>
               <div className="flex gap-1">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-gray-300"
                 >
                   Previous
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 text-sm border rounded ${currentPage === page ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-50'}`}
+                    className={`px-3 py-1 text-sm border rounded ${
+                      currentPage === page
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700 dark:text-gray-300'
+                    }`}
                   >
                     {page}
                   </button>
@@ -436,7 +544,7 @@ export default function Dashboard() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed dark:border-gray-600 dark:hover:bg-gray-700 dark:text-gray-300"
                 >
                   Next
                 </button>
@@ -450,11 +558,23 @@ export default function Dashboard() {
       {deleteId && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Delete Item</h3>
-            <p className="text-gray-500 dark:text-gray-300 text-sm mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">Delete Item</h3>
+            <p className="text-gray-500 dark:text-gray-300 text-sm mb-6">
+              Are you sure you want to delete this item? This action cannot be undone.
+            </p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteId(null)} disabled={deleteLoading} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition">Cancel</button>
-              <button onClick={handleDelete} disabled={deleteLoading} className="px-4 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition disabled:opacity-50">
+              <button
+                onClick={() => setDeleteId(null)}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition disabled:opacity-50"
+              >
                 {deleteLoading ? 'Deleting...' : 'Delete'}
               </button>
             </div>

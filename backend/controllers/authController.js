@@ -91,8 +91,11 @@ exports.loginUser = async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+        phone: user.phone,
+        avatar: user.avatar,
+        bio: user.bio,
+      },
     });
 
   } catch (error) {
@@ -104,7 +107,7 @@ exports.loginUser = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const [users] = await db.query(
-      'SELECT id, name, email, phone FROM users WHERE id = ?',
+      'SELECT id, name, email, phone, avatar, bio FROM users WHERE id = ?',
       [req.user.id]
     );
 
